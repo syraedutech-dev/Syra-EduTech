@@ -1,12 +1,40 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Syra — Build skills. Build careers.",
-  description: "Premium, practical technology training for the people and teams shaping what comes next.",
+  metadataBase: new URL("https://syraedutech.in"),
+
+  title: "Syra EduTech | Data Analytics, Data Science & Full Stack Training",
+
+  description:
+    "Learn Data Analytics, Data Science and Full Stack Development with Syra EduTech. Explore practical training, hands-on projects, interview preparation and technology programs for students and institutions.",
+
+  applicationName: "Syra EduTech",
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    title: "Syra EduTech | Career-Focused Technology Training",
+    description:
+      "Build practical technology skills with Syra EduTech through hands-on courses, projects and career preparation.",
+    url: "https://syraedutech.in/",
+    siteName: "Syra EduTech",
+    locale: "en_IN",
+    type: "website",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
+
   other: {
     "codex-preview": "development",
   },
+
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
