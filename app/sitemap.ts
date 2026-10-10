@@ -3,6 +3,9 @@ import { trainers } from "./data";
 
 const siteUrl = "https://syraedutech.in";
 
+export const dynamic = "force-static";
+export const revalidate = false;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: siteUrl, changeFrequency: "weekly", priority: 1 },
