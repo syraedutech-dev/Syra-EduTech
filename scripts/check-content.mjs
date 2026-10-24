@@ -10,7 +10,7 @@ async function upload(bytes, type, admin = true) {
   return fetch(base + "/api/uploads", { method: "POST", headers: { Origin: base, ...(admin ? { Cookie: cookie } : {}) }, body: form });
 }
 async function request(path, { admin = false, method = "GET", body, origin = base, headers = {} } = {}) {
-  const response = await fetch(base + path, { method, headers: { ...(body ? { "Content-Type": "application/json", Origin: origin } : {}), ...(admin ? { Cookie: cookie } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined, redirect: "manual" });
+  const response = await fetch(base + path, { method, headers: { ...(body ? { "Content-Type": "application/json", Origin: origin } : {}), ...(admin ? { Cookie: cookie } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined, redirect: "manual", signal: AbortSignal.timeout(15000) });
   const text = await response.text(); let data; try { data = JSON.parse(text); } catch { data = text; }
   return { status: response.status, data, headers: response.headers };
 }
@@ -18,9 +18,18 @@ try {
   assert.equal((await request("/api/content?admin=1")).status, 403);
   assert.equal((await request("/api/content?admin=1", { headers: { "oai-authenticated-user-id": "forged", "oai-authenticated-user-email": "syraedutech@gmail.com" } })).status, 403);
   assert.equal((await request("/api/content", { method: "POST", body: {} })).status, 403);
-  const signin = await request("/signin-with-chatgpt?return_to=/admin");
+  let signin;
+  if (process.env.CONTENT_TEST_ADMIN_PASSWORD) {
+    assert.equal((await request("/api/admin/login", { method: "POST", body: { email: "other@example.com", password: process.env.CONTENT_TEST_ADMIN_PASSWORD } })).status, 401);
+    assert.equal((await request("/api/admin/login", { method: "POST", body: { email: "syraedutech@gmail.com", password: "incorrect-password" } })).status, 401);
+    assert.equal((await request("/api/content?admin=1", { headers: { Cookie: "syra_admin_session=forged.invalid" } })).status, 403);
+    signin = await request("/api/admin/login", { method: "POST", body: { email: "syraedutech@gmail.com", password: process.env.CONTENT_TEST_ADMIN_PASSWORD } });
+    assert.equal(signin.status, 200);
+    assert.ok(signin.headers.get("set-cookie")?.includes("HttpOnly"));
+    assert.ok(signin.headers.get("set-cookie")?.includes("Secure"));
+  } else signin = await request("/signin-with-chatgpt?return_to=/admin");
   cookie = signin.headers.get("set-cookie")?.split(";")[0] || "";
-  assert.ok(cookie, "Local sign-in should issue a cookie");
+  assert.ok(cookie, "Sign-in should issue a cookie");
   assert.equal((await request("/api/content?admin=1", { admin: true })).status, 200);
   assert.equal((await request("/api/content", { admin: true, method: "POST", origin: "https://untrusted.example", body: {} })).status, 403);
   const imageBytes = await readFile("public/syra-edutech-logo.png");
@@ -67,4 +76,11 @@ try {
     assert.equal((await request(url, { admin: true, method: "DELETE", body: {} })).status, 200);
     assert.equal((await request(url)).status, 404);
   }
+}
+
+if (process.env.CONTENT_TEST_ADMIN_PASSWORD) {
+  const logout = await request("/api/admin/logout", { admin: true });
+  assert.equal(logout.status, 303);
+  assert.ok(logout.headers.get("set-cookie")?.includes("Max-Age=0"));
+  console.log("PASS: Netlify admin credentials, signed session cookie, forged session rejection and logout");
 }

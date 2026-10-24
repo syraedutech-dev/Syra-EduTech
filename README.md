@@ -127,30 +127,55 @@ The portable build runs Vinext directly without a host `timeout` command. The ma
 
 ## Website content administration
 
-Visit `/admin` and sign in with ChatGPT. The production administrator is
-`syraedutech@gmail.com`; other accounts cannot read the inbox or modify content.
-The Sites identity proxy must be used in production: it authenticates visitors
-and owns the identity headers. Do not expose this Worker behind a proxy that
-accepts user-supplied `oai-authenticated-user-*` headers.
+Use `/admin` to manage student testimonials, gallery images, trainer profiles
+and the private general-feedback inbox. Public visitors need no account.
+Gallery and trainer forms support local image uploads up to 5 MB (PNG, JPG,
+WebP, GIF) or existing image URLs. Draft content stays hidden from website
+sections, and visitor feedback is never published automatically.
 
-Local-only development uses the starter's existing mock identity (`local_seedy`).
-Visit `/signin-with-chatgpt?return_to=/admin` on the loopback preview to sign in.
-The development-only role is disabled in production builds.
+### Netlify deployment
 
-The admin UI supports creating, editing, drafting, publishing and removing
-student testimonials, gallery images and trainer profiles. Existing content can
-be edited too. Image fields include a local file picker with a preview and upload status. JPG, PNG, WebP and GIF files up to 5 MB are accepted. Admin-only uploads are saved in the R2 `BUCKET` binding and served through `/api/media/<key>`. HTTPS image URLs and project-local asset paths are also supported. Uploaded images are public website assets; only the content publishing controls determine whether they appear in website sections.
-New trainer URLs are created automatically. Testimonials require publication
-permission. General feedback at `/feedback` is stored privately in the admin inbox;
-it is never automatically published. Individual feedback messages can be deleted.
+The Netlify build uses Next.js SSR and Netlify Blobs for content and image
+storage. `netlify.toml` declares `npm run build:netlify` and publish directory
+`.next`. Keep Netlify's automatic Next.js runtime enabled. No Cloudflare D1
+or R2 bindings are needed on Netlify; the Cloudflare adapter is excluded from
+the Next.js build using the aliases in `next.config.ts`.
 
-This feature requires a running server and Cloudflare D1 `DB` and R2 `BUCKET` bindings, declared
-in `.openai/hosting.json`. It cannot operate on the previous static Netlify export.
-Use the existing Vinext / Sites Worker deployment path, which applies the checked-in
-Drizzle migrations. No deployment has been performed by this local change.
+Before using admin login, add these server-side environment variables in
+Netlify Project configuration > Environment variables, with Functions scope:
 
-For a fresh local checkout, run `npm run db:migrate:local` before `npm run dev`.
-Database records persist in `.wrangler/state`; retain this directory to keep local data.
-Run `npm run check:content` while the development server is running to exercise
-admin authorization, drafts, publishing, trainer pages and private feedback.
-The check creates and removes its own temporary local records.
+- `ADMIN_PASSWORD`: a unique strong password of at least 16 characters.
+- `ADMIN_SESSION_SECRET`: a separate cryptographically random secret of at
+  least 32 characters. For example, generate one on your computer with
+  `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
+
+Do not prefix either variable with `NEXT_PUBLIC_`, put them in source control,
+or share them in chat. Redeploy after configuring them. On Netlify, sign in
+using `syraedutech@gmail.com` and the password you configured. The previous
+Sites-only ChatGPT sign-in is not used on Netlify. Invalid credentials and
+forged identity headers cannot grant admin access. Sessions use an eight-hour
+signed HttpOnly/Secure cookie; repeated failed logins are limited per connection
+IP. Admin login remains disabled if either secret is missing or too short.
+
+To verify the exact deploy build, run `npm run build:netlify`. Then run
+`npm run check:netlify`: this starts the built Next.js server and the official
+Netlify Blobs local server, generates temporary test credentials, tests login,
+content publishing, feedback, image uploads and logout, and stops both servers.
+It uses only isolated, ignored files under `.sites-runtime/`, never production
+Netlify storage. A live Netlify deployment is still needed to verify Netlify's
+own runtime injection and storage permissions. This change does not migrate
+previous Cloudflare D1/R2 data into Netlify Blobs.
+
+### Sites / Cloudflare local development
+
+`npm run dev` and `npm run build` retain the existing Vinext/Cloudflare adapter.
+The Sites identity proxy must own the `oai-authenticated-user-*` headers in
+production. Only `syraedutech@gmail.com` is an admin there. For loopback local
+preview, visit `/signin-with-chatgpt?return_to=/admin` to use the development-only
+mock identity (`local_seedy`); this role is disabled in production.
+
+Run `npm run db:migrate:local` before starting a fresh local preview. Local D1
+records persist in `.wrangler/state`, while uploaded images use the declared
+R2 `BUCKET` binding. Retain that directory to keep local data. Run
+`npm run check:content` while the development server is running to exercise
+the Cloudflare preview path. The test removes its temporary content and images.
