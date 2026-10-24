@@ -124,3 +124,33 @@ The portable build runs Vinext directly without a host `timeout` command. The ma
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+
+## Website content administration
+
+Visit `/admin` and sign in with ChatGPT. The production administrator is
+`syraedutech@gmail.com`; other accounts cannot read the inbox or modify content.
+The Sites identity proxy must be used in production: it authenticates visitors
+and owns the identity headers. Do not expose this Worker behind a proxy that
+accepts user-supplied `oai-authenticated-user-*` headers.
+
+Local-only development uses the starter's existing mock identity (`local_seedy`).
+Visit `/signin-with-chatgpt?return_to=/admin` on the loopback preview to sign in.
+The development-only role is disabled in production builds.
+
+The admin UI supports creating, editing, drafting, publishing and removing
+student testimonials, gallery images and trainer profiles. Existing content can
+be edited too. Image fields include a local file picker with a preview and upload status. JPG, PNG, WebP and GIF files up to 5 MB are accepted. Admin-only uploads are saved in the R2 `BUCKET` binding and served through `/api/media/<key>`. HTTPS image URLs and project-local asset paths are also supported. Uploaded images are public website assets; only the content publishing controls determine whether they appear in website sections.
+New trainer URLs are created automatically. Testimonials require publication
+permission. General feedback at `/feedback` is stored privately in the admin inbox;
+it is never automatically published. Individual feedback messages can be deleted.
+
+This feature requires a running server and Cloudflare D1 `DB` and R2 `BUCKET` bindings, declared
+in `.openai/hosting.json`. It cannot operate on the previous static Netlify export.
+Use the existing Vinext / Sites Worker deployment path, which applies the checked-in
+Drizzle migrations. No deployment has been performed by this local change.
+
+For a fresh local checkout, run `npm run db:migrate:local` before `npm run dev`.
+Database records persist in `.wrangler/state`; retain this directory to keep local data.
+Run `npm run check:content` while the development server is running to exercise
+admin authorization, drafts, publishing, trainer pages and private feedback.
+The check creates and removes its own temporary local records.

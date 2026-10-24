@@ -13,7 +13,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[#07111f] text-slate-100">
       <nav className="mx-auto flex max-w-[1160px] items-center justify-between px-6 py-6 lg:px-10">
-        <a href="/" aria-label="Back to SyraEduTech home"><img src="/syra-edutech-logo.png" alt="SyraEduTech" className="h-10 w-auto object-contain sm:h-12" /></a>
+        <a href="/" aria-label="Back to SyraEduTech home"><img src="/syra-mark.svg" alt="SyraEduTech" width={48} height={48} className="h-11 w-11 rounded-xl object-contain sm:h-12 sm:w-12" /></a>
         <a href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"><ArrowLeft size={15} /> Back to home</a>
       </nav>
 

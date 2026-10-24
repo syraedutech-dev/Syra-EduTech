@@ -1,0 +1,11 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+const config = resolve(".sites-runtime/content-db.json");
+await mkdir(resolve(".sites-runtime"), { recursive: true });
+await writeFile(config, JSON.stringify({ name: "syra-content-local", compatibility_date: "2026-05-15", d1_databases: [{ binding: "DB", database_name: "site-creator-d1", database_id: "00000000-0000-4000-8000-000000000000", migrations_dir: resolve("drizzle") }] }));
+process.env.WRANGLER_LOG_PATH = resolve(".wrangler/logs");
+process.env.WRANGLER_SEND_METRICS = "false";
+const result = spawnSync(process.execPath, [resolve("node_modules/wrangler/bin/wrangler.js"), "d1", "migrations", "apply", "DB", "--local", "--config", config, "--persist-to", resolve(".wrangler/state")], { stdio: "inherit", env: process.env });
+if (result.error) throw result.error;
+process.exit(result.status ?? 1);

@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: { url: "/syra-mark.svg", type: "image/svg+xml" },
+    shortcut: "/syra-mark.svg",
   },
 };
 
